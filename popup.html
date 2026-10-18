@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="ui.css">
+<style>body { width: 280px; padding: 14px; }</style>
+</head>
+<body>
+  <header class="row between">
+    <strong class="brand">Calm Feed</strong>
+    <label class="switch" title="Filter on/off"><input type="checkbox" id="enabled"><span></span></label>
+  </header>
+
+  <div class="big"><span id="today">0</span><small>posts hidden today</small></div>
+  <div class="muted" id="bysite"></div>
+
+  <div class="field">
+    <label for="threshold" class="row between"><span>Sensitivity</span><span id="tval" class="muted"></span></label>
+    <input type="range" id="threshold" min="0.3" max="0.9" step="0.05">
+    <div class="row between muted tiny"><span>strict</span><span>lenient</span></div>
+  </div>
+
+  <div class="row between">
+    <span>Claude classification</span>
+    <span id="llm" class="pill"></span>
+  </div>
+  <div id="err" class="err" hidden></div>
+
+  <button id="opts" class="btn">Settings</button>
+  <script src="src/common.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Calm Feed — Ragebait Filter",
+  "version": "0.1.0",
+  "description": "Hides ragebait and outrage-farming posts on X, Instagram, Facebook, Reddit, YouTube, Threads, Bluesky and LinkedIn before you see them.",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["https://api.anthropic.com/*"],
+  "background": {
+    "service_worker": "src/background.js",
+    "scripts": ["src/common.js", "src/background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*",
+        "https://mobile.twitter.com/*",
+        "https://www.instagram.com/*",
+        "https://www.facebook.com/*",
+        "https://web.facebook.com/*",
+        "https://www.reddit.com/*",
+        "https://old.reddit.com/*",
+        "https://www.youtube.com/*",
+        "https://m.youtube.com/*",
+        "https://www.threads.net/*",
+        "https://www.threads.com/*",
+        "https://bsky.app/*",
+        "https://www.linkedin.com/*"
+      ],
+      "js": ["src/common.js", "src/sites.js", "src/heuristics.js", "src/content.js"],
+      "css": ["src/content.css"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Calm Feed",
+    "default_icon": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png" }
+  },
+  "options_page": "options.html",
+  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "browser_specific_settings": {
+    "gecko": { "id": "calm-feed@local", "strict_min_version": "121.0" }
+  }
+}

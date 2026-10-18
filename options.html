@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Calm Feed — Settings</title>
+<link rel="stylesheet" href="ui.css">
+</head>
+<body>
+<main class="page">
+  <div class="row between">
+    <h1>Calm Feed</h1>
+    <span class="saved" id="saved">Saved</span>
+  </div>
+  <p class="muted">Hides ragebait before it reaches your screen. Everything runs locally unless you turn on Claude classification.</p>
+
+  <h2>Filtering</h2>
+  <div class="card">
+    <div class="row between">
+      <div><div>Filter enabled</div></div>
+      <label class="switch"><input type="checkbox" data-k="enabled"><span></span></label>
+    </div>
+    <div class="stack">
+      <div class="row between"><span>Sensitivity threshold</span><span class="muted" id="tval"></span></div>
+      <input type="range" min="0.3" max="0.9" step="0.05" data-k="threshold" data-num>
+      <div class="desc">Posts scoring above this are hidden. Lower = hides more (and more false positives).</div>
+    </div>
+    <div class="stack">
+      <div>What happens to filtered posts</div>
+      <select data-k="mode">
+        <option value="remove">Remove completely — never see them</option>
+        <option value="stub">Collapse to a thin bar with the reason (good for tuning)</option>
+      </select>
+    </div>
+    <div class="row between">
+      <div><div>Flag button on posts</div><div class="desc">A small ⊘ on hover to hide a post or mute its author.</div></div>
+      <label class="switch"><input type="checkbox" data-k="showFlagButton"><span></span></label>
+    </div>
+    <div class="stack">
+      <div>Sites</div>
+      <div class="sites" id="sites"></div>
+    </div>
+  </div>
+
+  <h2>Claude classification</h2>
+  <div class="card">
+    <div class="row between">
+      <div><div>Use Claude to judge posts</div><div class="desc">Catches subtle ragebait that keyword rules miss. Post text is sent to the Anthropic API with your key.</div></div>
+      <label class="switch"><input type="checkbox" data-k="useLLM"><span></span></label>
+    </div>
+    <div class="stack">
+      <div>Anthropic API key</div>
+      <input type="password" data-k="apiKey" placeholder="sk-ant-…" autocomplete="off">
+      <div class="row" style="margin-top:8px">
+        <button class="btn primary" id="test" type="button">Test key</button>
+        <span class="desc" id="testout"></span>
+      </div>
+    </div>
+    <div class="stack">
+      <div>Model</div>
+      <input type="text" data-k="model">
+      <div class="desc">A small, fast model is ideal. Default: claude-haiku-5-5.</div>
+    </div>
+    <div class="row between">
+      <div><div>Strict mode</div><div class="desc">Keep each post hidden until Claude has judged it (cached posts are instant). Off = show first, pull it if flagged.</div></div>
+      <label class="switch"><input type="checkbox" data-k="strict"><span></span></label>
+    </div>
+    <div class="stack">
+      <div>Your definition of ragebait</div>
+      <textarea data-k="userDefinition" placeholder="e.g. Hide all US partisan politics, crypto drama and gender-war posts. Keep science news and Swiss politics even if heated."></textarea>
+      <div class="desc">Sent to Claude with every batch. Plain language works.</div>
+    </div>
+    <div class="row between">
+      <div class="desc" id="exinfo"></div>
+      <div class="row">
+        <button class="btn" id="clearEx" type="button" style="margin:0;width:auto">Reset feedback</button>
+        <button class="btn" id="clearCache" type="button" style="margin:0;width:auto">Clear cache</button>
+      </div>
+    </div>
+  </div>
+
+  <h2>Lists</h2>
+  <div class="card">
+    <div class="stack">
+      <div>Always-hide keywords <span class="desc">(one per line, any match hides the post)</span></div>
+      <textarea data-k="customKeywords" data-list></textarea>
+    </div>
+    <div class="stack">
+      <div>Muted accounts <span class="desc">(handles, one per line)</span></div>
+      <textarea data-k="blockAuthors" data-list></textarea>
+    </div>
+    <div class="stack">
+      <div>Never-filter accounts</div>
+      <textarea data-k="allowAuthors" data-list></textarea>
+    </div>
+  </div>
+</main>
+<script src="src/common.js"></script>
+<script src="options.js"></script>
+</body>
+</html>

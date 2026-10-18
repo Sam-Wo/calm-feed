@@ -1,0 +1,41 @@
+html:not([data-rbf-off]) [data-rbf-hidden] { display: none !important; }
+
+.rbf-stub {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 4px 8px; padding: 6px 10px;
+  font: 12px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #6b7280; background: rgba(127, 127, 127, .08);
+  border: 1px dashed rgba(127, 127, 127, .35); border-radius: 8px;
+}
+.rbf-stub-label { font-weight: 600; }
+.rbf-stub-why { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rbf-stub button, .rbf-menu button {
+  font: inherit; cursor: pointer; border-radius: 6px; padding: 2px 8px;
+  border: 1px solid rgba(127, 127, 127, .4); background: transparent; color: inherit;
+}
+
+.rbf-flag {
+  position: absolute; top: 6px; right: 6px; z-index: 50;
+  width: 22px; height: 22px; padding: 0; border-radius: 50%;
+  border: 1px solid rgba(127, 127, 127, .4); background: rgba(255, 255, 255, .9); color: #6b7280;
+  font: 14px/20px system-ui, sans-serif; text-align: center; cursor: pointer;
+  opacity: 0; transition: opacity .15s;
+}
+:hover > .rbf-flag, .rbf-flag:focus-visible { opacity: .85; }
+.rbf-flag:hover { opacity: 1; color: #dc2626; }
+
+.rbf-menu {
+  position: absolute; top: 32px; right: 6px; z-index: 51;
+  display: flex; flex-direction: column; gap: 4px; padding: 6px;
+  font: 12px/1.4 system-ui, sans-serif; color: #111827;
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .15);
+}
+.rbf-menu button { text-align: left; border: none; padding: 4px 8px; }
+.rbf-menu button:hover { background: #f3f4f6; }
+
+@media (prefers-color-scheme: dark) {
+  .rbf-flag { background: rgba(24, 24, 27, .9); color: #a1a1aa; }
+  .rbf-menu { background: #18181b; color: #f4f4f5; border-color: #3f3f46; }
+  .rbf-menu button:hover { background: #27272a; }
+}

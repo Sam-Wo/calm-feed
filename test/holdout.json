@@ -1,0 +1,352 @@
+[
+  {
+    "text": "We finally moved our billing service off Postgres 11 last weekend — and it was not the clean cutover I promised in the planning doc.\n\nQuick context for people who don't know our stack: the billing DB is about 1.8 TB, most of it in a single invoices_line_items table that nobody has dared to partition since 2019. We used logical replication into a fresh Postgres 16 cluster, let it catch up for nine days, then planned a 20-minute write freeze on Saturday at 06:00 UTC.\n\nWhat went wrong — in order:\n\n1. Sequences don't replicate with logical replication. We knew this. We had a script for it. The script read sequence values from the wrong schema because someone (me) had hardcoded \"public\" — and two of our sequences live in \"billing_v2\". First inserts after cutover hit duplicate key errors for about four minutes.\n\n2. One extension — pg_partman — was on a different minor version on the new cluster. Harmless on its own, but our maintenance job called a function whose signature changed. It failed silently — the job logs to a file nobody reads — and we only noticed Monday when Sunday's partition hadn't been created.\n\n3. The planner chose a terrible plan for our monthly revenue report on 16. Same query, same indexes — 4 seconds on 11, 11 minutes on 16. Running ANALYZE on the big table fixed it. Obvious in hindsight — logical replication doesn't carry statistics — but at 07:30 on a Saturday nothing is obvious.\n\nWhat went right: the rollback plan was never needed, but having it written down meant nobody panicked. Read replicas switched over with a DNS change and a 60s TTL we had lowered the week before. Customer-facing downtime was 23 minutes against a 20-minute budget.\n\nIf you're doing the same upgrade: copy sequences per schema, diff your extension versions with \\dx on both sides, and ANALYZE everything before you open the gates. Our runbook is on the engineering blog if anyone wants to steal it — the sequence script is fixed now, I promise.",
+    "site": "linkedin",
+    "isReply": false,
+    "label": "human",
+    "note": "long technical postmortem, heavy em-dash use, specifics"
+  },
+  {
+    "text": "Dad's tomatoes finally came in — all eleven plants, after he swore in June that the blight had \"got the lot of them.\" He brought a bag over this morning, still warm from the greenhouse, and stood in the kitchen telling me exactly which ones were Moneymaker and which were the weird striped ones Auntie Jean sent from Cornwall — I couldn't tell the difference but nodded like I could. He's 81 now. The knee is bad, the hearing is worse — but the man can still grow a tomato. Made a sauce with half of them for tea. The kids ate it without complaining, which is its own minor miracle.",
+    "site": "facebook",
+    "isReply": false,
+    "label": "human",
+    "note": "personal anecdote with heavy em-dashes"
+  },
+  {
+    "text": "Three years into running a fully remote team of 14, here's what I actually believe — not what I believed when we started.\n\nAsync-first is great for deep work and terrible for onboarding. Our first two remote hires took almost five months to feel productive. We fixed it — partially — by pairing every new hire with a \"buddy\" for 90 minutes a day during the first three weeks. Retention in year one went from 2 of 4 to 6 of 6.\n\nThe weekly all-hands is overrated. We killed ours in March and replaced it with a written Friday update that takes me about 40 minutes to write. Nobody missed the meeting — two people asked for it back after a reorg, and we brought it back for exactly one month.\n\nTimezones matter more than people admit. Having one engineer in Auckland and everyone else between Lisbon and Warsaw meant he was effectively on a different team — not because anyone excluded him, but because every decision happened while he slept. We ended up shifting his role toward on-call and release management, which he actually prefers.\n\nI'm not anti-office — I'd love a place to meet four times a year — but the \"remote doesn't work\" crowd is mostly describing companies that never changed how they made decisions.",
+    "site": "linkedin",
+    "isReply": false,
+    "label": "human",
+    "note": "opinion piece with specifics and em-dashes; strong views but not template"
+  },
+  {
+    "text": "Nach knapp sieben Jahren bei der Stadtwerke Augsburg Energie GmbH war gestern mein letzter Tag – und ehrlich gesagt war ich beim Ausräumen des Schreibtischs emotionaler als gedacht.\n\nIch habe dort als Werkstudent in der Netzleitstelle angefangen und durfte zuletzt das Projekt zur Umstellung der Smart-Meter-Gateways auf die neue BSI-Richtlinie leiten – rund 42.000 Zähler, zwei Dienstleister, ein Zeitplan, der dreimal verschoben wurde. Danke an Petra, Murat und das ganze Team Messwesen – ohne euch hätte ich das nicht durchgestanden.\n\nAb 1. November bin ich bei einem kleinen Ingenieurbüro in Regensburg, das sich auf Wärmenetze für Kommunen spezialisiert hat. Neue Stadt, neues Thema – ich freue mich drauf.",
+    "site": "linkedin",
+    "isReply": false,
+    "label": "human",
+    "note": "German job update with spaced en-dashes and specifics"
+  },
+  {
+    "text": "Die Sanierung der Wilhelmsbrücke verzögert sich erneut – laut Bauamt jetzt bis voraussichtlich Mai 2027. Grund sind Schadstoffe im alten Fugenmaterial, die erst beim Abtragen gefunden wurden. Die Umleitung über die Hafenstraße bleibt bestehen – Buslinie 7 fährt weiterhin im 20-Minuten-Takt statt alle 10. Infoabend für Anwohner am Donnerstag, 19 Uhr, Gemeindehaus St. Paul.",
+    "site": "bluesky",
+    "isReply": false,
+    "label": "human",
+    "note": "German local news with en-dashes"
+  },
+  {
+    "text": "Versuch Nr. 6 mit dem Roggensauer – und endlich keine Ziegelsteine mehr 😅\n70 % Roggen, 30 % Dinkel, 16 Stunden Stockgare im Keller bei ca. 14 °C. Gebacken im gusseisernen Topf, 20 Minuten mit Deckel bei 250, dann 35 ohne bei 210. Die Krume ist noch etwas feucht – nächstes Mal länger auskühlen lassen, bevor ich ungeduldig anschneide.\n#sauerteig #roggenbrot #brotbacken",
+    "site": "instagram",
+    "isReply": false,
+    "label": "human",
+    "note": "German hobby post (sourdough) with en-dashes and a few relevant hashtags"
+  },
+  {
+    "text": "Seit dem letzten FritzOS-Update (8.03) verliert meine 7590 AX jede Nacht gegen 3:15 die Internetverbindung für ca. 2 Minuten. Im Ereignisprotokoll steht nur \"PPPoE-Fehler: Zeitüberschreitung\". Anbieter ist 1&1 über Telekom-VDSL, 100 Mbit. Zwangstrennung ist eigentlich deaktiviert bzw. auf 4:00 gelegt, das passt also nicht.\n\nHab schon Werkseinstellungen probiert, gleiches Ergebnis. Hat jemand dasselbe Problem seit dem Update oder sollte ich direkt den Support anrufen?",
+    "site": "reddit",
+    "isReply": false,
+    "label": "human",
+    "note": "German tech question ending with genuine question"
+  },
+  {
+    "text": "Danke für das Video! Der Tipp bei 8:20 mit dem Zahnstocher in der Schraubenbohrung hat bei meinem alten Küchenschrank tatsächlich funktioniert – hält jetzt bombenfest.",
+    "site": "youtube",
+    "isReply": true,
+    "label": "human",
+    "note": "German genuine short reply with praise plus specific detail"
+  },
+  {
+    "text": "Erster Tag mit Winterjacke und direkt den Schlüssel von letztem März in der Tasche gefunden. Der hat mich damals zwei Stunden suchen gekostet.",
+    "site": "threads",
+    "isReply": false,
+    "label": "human",
+    "note": "German short casual post"
+  },
+  {
+    "text": "Novembermorgen\n\nDer Nebel liegt\nwie Watte auf dem Feld,\ndie Krähen streiten\num ein Stück vom Licht.\n\nIch trinke Kaffee\nam offenen Fenster\nund warte, dass der Tag\nsich selbst entscheidet.",
+    "site": "bluesky",
+    "isReply": false,
+    "label": "human",
+    "note": "German poem; short lines like broetry but genuine verse"
+  },
+  {
+    "text": "tidyfeed v2.4.0 is out 🎉\n\n✨ New: per-site rules (mute a keyword on Reddit but not on Mastodon)\n🐛 Fixed: Firefox crash when a post contained a 0-width joiner sequence (#412, thanks @kmrz)\n⚡ Feed rendering ~30% faster on long threads\n🗑️ Removed the old v1 settings migration — if you skipped every release since 2024, export first\n\nFull changelog: github.com/tidyfeed/tidyfeed/releases",
+    "site": "x",
+    "isReply": false,
+    "label": "human",
+    "note": "release notes with emoji bullets; human/project announcement"
+  },
+  {
+    "text": "Wrote this on the 6:40 bus home last night, gonna try it at the open mic at the Crown on Thursday if my nerve holds up. Still needs a bridge.\n\n\"Streetlights on the river,\norange on the black,\nI left my keys in Leeds, love,\nand I'm never going back.\n\nStreetlights on the river,\nand the last train's running late,\nyou said you'd wait till Sunday,\nit's Tuesday and I wait.\"",
+    "site": "facebook",
+    "isReply": false,
+    "label": "human",
+    "note": "original song lyrics with context; short repeated lines"
+  },
+  {
+    "text": "Happy to share that from this Monday I am joining the data team at Allegro in Poznań as junior analytics engineer. Before I was working 4 years as accountant, so this is quite big change for me. I did the evening course of SQL and dbt during last year and my first real project was automate the monthly VAT report which was taking us 3 days, now it is 40 minutes.\n\nBig thanks to Kasia who was my mentor and was answering my stupid questions about git every week. I still don't understand rebase but I am working on it :)",
+    "site": "linkedin",
+    "isReply": false,
+    "label": "human",
+    "note": "non-native English speaker job update with minor grammar quirks and specifics"
+  },
+  {
+    "text": "Just finished restoring my grandfather's 1978 Peugeot PX10. Frame was surprisingly straight, the Simplex derailleur needed a full rebuild and I had to source a replacement Delrin pulley from a guy in Belgium. The original Mafac brakes still work after new pads and cables, which is honestly a testament to how simple they are. Total spend about €340 including tyres. Pics in the comments — the decals are original, I didn't dare touch them.",
+    "site": "reddit",
+    "isReply": false,
+    "label": "human",
+    "note": "contains one stock phrase (\"a testament to\") but specific and human"
+  },
+  {
+    "text": "My partner and I are moving from Manchester to Rotterdam in January (her job). I'm a self-employed illustrator and currently invoice UK clients as a sole trader. From what I've read I'd need to register with the KvK as a ZZP'er and the 30% ruling doesn't apply to me since I'm not being hired from abroad.\n\nMain things I can't figure out: do I need a Dutch business bank account from day one, and does anyone know if the KOR VAT exemption is worth it when 90% of my clients are outside the EU?",
+    "site": "reddit",
+    "isReply": false,
+    "label": "human",
+    "note": "genuine question ending, specifics"
+  },
+  {
+    "text": "Great video — the bit at 12:40 about cracking the bleed nipple before you push the pistons back saved me from ruining my Shimano calipers. Done in 20 min.",
+    "site": "youtube",
+    "isReply": true,
+    "label": "human",
+    "note": "English genuine short reply: praise plus specific detail"
+  },
+  {
+    "text": "the cat has discovered the radiator. we will not be seeing her again until april",
+    "site": "x",
+    "isReply": false,
+    "label": "human",
+    "note": "short casual post"
+  },
+  {
+    "text": "Some personal news: after five years at Zalando in Berlin, I'm moving to Leipzig to join Spreadshirt's platform team as a staff engineer, starting December. Mostly for family reasons — my parents are in Halle and our son starts school next autumn.\n\nIf anyone in Leipzig can recommend a Kita in Plagwitz or Lindenau with spots for a 4-year-old, my DMs are open. Also happy to grab coffee with anyone doing Kotlin/Postgres work in the area.",
+    "site": "linkedin",
+    "isReply": false,
+    "label": "human",
+    "note": "genuine job/relocation update ending with real question to network"
+  },
+  {
+    "text": "Thames Water has confirmed — after three days of denying it — that the sewage overflow at Ashford Bridge ran for 61 hours last week. That's the same outfall that was fined £3.3m in 2023. The EA says it's \"assessing next steps\" — which, historically, means nothing happens for 14 months.",
+    "site": "x",
+    "isReply": false,
+    "label": "human",
+    "note": "news-style post with heavy em-dashes and specifics"
+  },
+  {
+    "text": "What you're seeing is almost certainly the container being OOM-killed, not your app crashing — exit code 137 is the giveaway. The JVM doesn't know about your cgroup limit the way you think it does, at least not with the flags you posted.\n\nA few things to check, roughly in order:\n\nFirst — you set -Xmx2g with a container limit of 2Gi. That's the classic mistake. Heap is only part of the JVM's memory. You also have metaspace, thread stacks (1 MB each by default — and Spring Boot with Tomcat will happily spin up 200 threads), the code cache, direct buffers from Netty, and GC overhead. In practice the RSS ends up somewhere around heap + 300–600 MB for a typical Spring service. So the kernel kills you the moment heap fills up even partially past ~1.5 GB.\n\nSecond — drop -Xmx entirely and use -XX:MaxRAMPercentage=70 instead. On JDK 17 the JVM reads the cgroup v2 limit correctly, so it'll size the heap relative to the container. 70% is conservative; some people go to 75. I wouldn't go higher unless you've measured.\n\nThird — turn on Native Memory Tracking (-XX:NativeMemoryTracking=summary) in a staging pod and run jcmd 1 VM.native_memory summary after it's been under load for a while. That tells you exactly where the non-heap memory is going. In our case it was direct buffers — a misconfigured WebClient was allocating a new connection pool per request.\n\nFourth — check whether the kills line up with your nightly batch job. If kubectl describe pod shows \"OOMKilled\" and the timestamps cluster around 02:00, that's your answer — the batch loads the whole customer table into memory.\n\nAlso — and this is a minor thing — your liveness probe has a 1s timeout. During a full GC pause on a 2 GB heap that can easily fail, and then Kubernetes restarts the pod, which looks a lot like a crash in the logs. Bump it to 5s and set failureThreshold to 3.\n\nIf none of that helps, post the output of NMT and I'll take another look.",
+    "site": "reddit",
+    "isReply": true,
+    "label": "human",
+    "note": "long technical reply with heavy em-dashes, 300+ words"
+  },
+  {
+    "text": "Last roll from the trip to Lofoten finally back from the lab. Portra 400 on my dad's old Pentax MX, shot mostly at 1/250 because the light up there in September is wild — sun at 3pm looks like 7pm anywhere else. Frame 14 is Reine from the bridge, about ten minutes before the rain came in sideways.\n#filmphotography #portra400 #lofoten",
+    "site": "instagram",
+    "isReply": false,
+    "label": "human",
+    "note": "hobby post with relevant hashtags at end (not a hashtag-spam block)"
+  },
+  {
+    "text": "Thanks! It's a 0.4 mm nozzle at 235 °C, Prusament PETG, 0.2 layer height. The trick for the overhang was turning the fan up to 70% only for that section.",
+    "site": "bluesky",
+    "isReply": true,
+    "label": "human",
+    "note": "short genuine reply with specific detail"
+  },
+  {
+    "text": "I was rejected from 63 jobs in 2024.\n\n63.\n\nToday I lead a team of 40.\n\nWhat changed?\n\nNot my resume.\nNot my skills.\nNot my network.\n\nMy mindset.\n\nI stopped asking \"Why me?\"\nAnd started asking \"What's next?\"\n\nRejection isn't the opposite of success.\nIt's part of it.\n\nAgree? 👇\n\n#Resilience #CareerGrowth #Mindset #Leadership #NeverGiveUp",
+    "site": "linkedin",
+    "isReply": false,
+    "label": "slop",
+    "note": "rejection-to-success broetry with Agree? CTA and hashtags"
+  },
+  {
+    "text": "AI won't take your job.\n\nSomeone who uses AI better than you will.\n\nHere's how to stay ahead in 2026 👇\n\n🚀 Learn prompt engineering\n🧠 Focus on uniquely human skills\n🤝 Build relationships, not just résumés\n📈 Never stop upskilling\n💡 Embrace change instead of fearing it\n\nThe future belongs to those who adapt.\n\n♻️ Repost to help someone in your network.\n🔔 Follow me for daily AI insights.\n\n#AI #FutureOfWork #Productivity #Innovation #GenAI",
+    "site": "linkedin",
+    "isReply": false,
+    "label": "slop",
+    "note": "AI-will-replace-you template with emoji bullets and repost CTA"
+  },
+  {
+    "text": "Most people are using ChatGPT completely wrong.\n\nI spent 400+ hours testing AI agents so you don't have to.\n\nHere are 9 AI tools that feel illegal to know about in 2026 🧵👇\n\n1. The one that writes your emails while you sleep\n2. The one that replaces a $5k/month marketing agency\n3. The one that turns any PDF into a viral thread\n\n(Bookmark this. You'll thank me later.)",
+    "site": "x",
+    "isReply": false,
+    "label": "slop",
+    "note": "X thread-bait listicle hook"
+  },
+  {
+    "text": "Gestern hat mich ein junger Kollege gefragt:\n\n„Was macht eine gute Führungskraft aus?“\n\nMeine Antwort hat ihn überrascht.\n\nEs geht nicht um Titel.\nEs geht nicht um Macht.\nEs geht nicht um das Eckbüro.\n\nEs geht um Menschen.\n\nEchte Führung beginnt dort, wo das Ego endet.\n\nWie seht ihr das? 👇\n\n#Leadership #Führung #NewWork #Mindset #Unternehmenskultur",
+    "site": "linkedin",
+    "isReply": false,
+    "label": "slop",
+    "note": "German leadership broetry, \"Es geht nicht um X. Es geht um Y.\" with CTA and hashtags"
+  },
+  {
+    "text": "Erfolg ist kein Zufall.\nEr ist eine Entscheidung.\n\nJeden einzelnen Tag.\n\n✅ Disziplin statt Motivation\n✅ Fokus statt Ablenkung\n✅ Handeln statt Abwarten\n✅ Wachstum statt Komfortzone\n\nEs ist nicht das Talent, das dich ausmacht.\nEs ist deine Haltung.\n\nSpeichere diesen Beitrag für die Tage, an denen du zweifelst. 🔖\n\n#Motivation #Erfolg #Persönlichkeitsentwicklung #Mindset",
+    "site": "linkedin",
+    "isReply": false,
+    "label": "slop",
+    "note": "German \"Es ist nicht X, es ist Y\" contrast template with checkmark bullets"
+  },
+  {
+    "text": "In today's fast-paced and ever-evolving digital landscape, organizations face an unprecedented array of challenges and opportunities. As we delve deeper into the era of artificial intelligence, it has become more important than ever to foster a culture of innovation, collaboration, and continuous learning.\n\nAt its core, digital transformation is not merely about adopting new technologies. It is about reimagining the way we work, connect, and create value. Leaders who embrace this mindset are uniquely positioned to unlock the full potential of their teams and drive meaningful, sustainable impact.\n\nNavigating this complex terrain requires a holistic approach. First and foremost, it is crucial to prioritize people. Technology is only as powerful as the individuals who wield it. By investing in upskilling and empowering employees, organizations can cultivate a resilient workforce that thrives amid uncertainty.\n\nFurthermore, data-driven decision-making serves as a cornerstone of success in the modern business environment. Leveraging actionable insights enables companies to stay agile, anticipate market shifts, and deliver exceptional customer experiences. In this regard, the seamless integration of AI-powered tools can be a true game-changer.\n\nEqually important is the role of authentic leadership. In a world where trust is the new currency, leaders must lead with empathy, transparency, and purpose. Their ability to inspire and align diverse stakeholders around a shared vision is a testament to the enduring power of human connection.\n\nMoreover, collaboration across silos is no longer optional. Breaking down barriers between departments fosters synergy, accelerates innovation, and paves the way for groundbreaking solutions. When teams come together with a common goal, the possibilities are truly limitless.\n\nUltimately, the journey of transformation is ongoing. It is not a destination, but a continuous process of growth, adaptation, and reinvention. By embracing change with curiosity and courage, we can collectively shape a brighter, more inclusive future for all.\n\nWhat steps is your organization taking to thrive in this new era? I'd love to hear your thoughts in the comments below! 👇\n\n#DigitalTransformation #Leadership #Innovation #AI #FutureOfWork #Growth",
+    "site": "linkedin",
+    "isReply": false,
+    "label": "slop",
+    "note": "long stock AI-ish filler essay (delve, landscape, testament, unlock), 300+ words"
+  },
+  {
+    "text": "Reminder for anyone who needs it today 💛\n\nNot everyone is meant to stay in your life forever.\nSome people come to teach you a lesson.\nSome come to test your strength.\nAnd some come to show you what you DON'T want.\n\nProtect your peace. Choose yourself. 🙏✨\n\nType \"AMEN\" if you agree and share to spread positivity!",
+    "site": "facebook",
+    "isReply": false,
+    "label": "slop",
+    "note": "motivational cliché shareable"
+  },
+  {
+    "text": "Growth is uncomfortable. 🌱\nBut so is staying the same.\nChoose your hard. 💪\n\nYour future self is watching. Make them proud. ✨\n\n.\n.\n.\n#motivation #mindset #growthmindset #selfimprovement #success #inspiration #dailymotivation #positivevibes #hustle #goals #selflove #entrepreneur #believeinyourself #nevergiveup",
+    "site": "instagram",
+    "isReply": false,
+    "label": "slop",
+    "note": "generic growth caption with hashtag block"
+  },
+  {
+    "text": "My 5-year-old taught me more about sales than my MBA ever did.\n\nYesterday she wanted ice cream.\n\nI said no.\n\nShe didn't give up. She didn't get angry. She asked a question:\n\n\"Daddy, what would make it a yes?\"\n\nI was speechless. 🤯\n\nHere's what she taught me about closing deals:\n\n1️⃣ Rejection is just the beginning of the conversation\n2️⃣ Curiosity beats persuasion every time\n3️⃣ Understand the \"why\" behind the \"no\"\n4️⃣ Persistence + empathy = results\n\nWe spend years learning frameworks.\nKids already know the secret.\n\nBe more like a 5-year-old. 🍦\n\nWhat's the best business lesson you've learned from a child? Drop it below 👇\n\n#Sales #B2B #Leadership #Parenting #LessonsLearned",
+    "site": "linkedin",
+    "isReply": false,
+    "label": "slop",
+    "note": "kid-taught-me-B2B story template with lesson list"
+  },
+  {
+    "text": "Stop scrolling. 🛑\n\nThis is your sign to finally start that thing you keep putting off.\n\nThe perfect moment doesn't exist.\nYou don't need more time.\nYou need to start.\n\nFuture you will thank you. 🙌\n\nLike if you needed this today ❤️",
+    "site": "threads",
+    "isReply": false,
+    "label": "slop",
+    "note": "stop-scrolling sign template"
+  },
+  {
+    "text": "In der heutigen schnelllebigen und zunehmend digitalisierten Arbeitswelt stehen Unternehmen vor nie dagewesenen Herausforderungen. Gleichzeitig eröffnen sich jedoch auch völlig neue Chancen, die es mutig zu ergreifen gilt.\n\nKünstliche Intelligenz ist dabei weit mehr als nur ein Werkzeug – sie ist ein echter Gamechanger, der die Art und Weise, wie wir arbeiten, kommunizieren und Werte schaffen, grundlegend verändert. Doch eines dürfen wir dabei nicht vergessen: Im Mittelpunkt steht immer der Mensch.\n\nNur wer seine Mitarbeitenden befähigt, kontinuierlich zu lernen und über sich hinauszuwachsen, kann das volle Potenzial seiner Organisation entfalten. Eine offene Fehlerkultur, echte Wertschätzung und eine klare Vision sind dabei die Grundpfeiler nachhaltigen Erfolgs.\n\nTransformation ist kein Ziel, sondern eine Reise. Eine Reise, die Mut, Neugier und Durchhaltevermögen erfordert – und die sich am Ende in jeder Hinsicht lohnt.\n\nLasst uns gemeinsam die Zukunft gestalten! 🚀\n\nWie geht ihr in euren Teams mit diesem Wandel um? Ich freue mich auf den Austausch in den Kommentaren!\n\n#Transformation #KI #Leadership #ZukunftDerArbeit #Innovation",
+    "site": "linkedin",
+    "isReply": false,
+    "label": "slop",
+    "note": "German stock AI-ish filler (schnelllebige Welt, Potenzial entfalten, Reise)"
+  },
+  {
+    "text": "Hiring managers won't tell you this, but I will:\n\nYour resume gets 6 seconds.\n\nHere's how to make them count 👇\n\n→ Lead with impact, not responsibilities\n→ Quantify everything\n→ Cut the fluff\n→ Tailor it for every role\n→ Let your personality shine\n\nSmall changes. Massive results.\n\nSave this for your next application 🔖\nFollow me for more career tips that actually work.\n\nP.S. Comment \"RESUME\" and I'll send you my free template.",
+    "site": "linkedin",
+    "isReply": false,
+    "label": "slop",
+    "note": "hiring-managers-wont-tell-you list with save/follow CTA"
+  },
+  {
+    "text": "You don't need more motivation.\n\nYou need more discipline.\n\nMotivation gets you started.\nDiscipline keeps you going.\n\nRead that again.",
+    "site": "x",
+    "isReply": false,
+    "label": "slop",
+    "note": "read-that-again broetry"
+  },
+  {
+    "text": "Montagsmotivation 💪☀️\n\nJeder Tag ist eine neue Chance, die beste Version deiner selbst zu sein!\nGlaub an dich – denn du bist stärker, als du denkst. ✨\nKleine Schritte führen zu großen Zielen. 🙌\n\nSchreib ein ❤️ in die Kommentare, wenn du heute durchstartest!",
+    "site": "facebook",
+    "isReply": false,
+    "label": "slop",
+    "note": "German Montagsmotivation cliché"
+  },
+  {
+    "text": "I'm thrilled and deeply humbled to announce that I'm starting a new chapter. 🎉\n\nAfter an incredible journey filled with growth, challenges, and unforgettable moments, I'm stepping into a new role at a company whose mission truly resonates with me.\n\nBut this isn't about me.\n\nIt's about every mentor who believed in me.\nEvery colleague who pushed me.\nEvery setback that shaped me.\n\nGratitude is the foundation of everything. 🙏\n\nHere's to new beginnings and endless possibilities! 🚀\n\n#NewBeginnings #Grateful #CareerJourney #Growth #Blessed",
+    "site": "linkedin",
+    "isReply": false,
+    "label": "slop",
+    "note": "thrilled-and-humbled announcement with zero specifics"
+  },
+  {
+    "text": "I wake up at 4:30 AM every day.\n\nNot because I have to.\n\nBecause I GET to.\n\nWhile the world sleeps, I:\n☀️ Journal\n🏋️ Train\n📚 Read\n🧘 Meditate\n\nBy 7 AM I've already won the day.\n\nSuccess isn't about talent.\nIt's about habits.\n\nYour morning decides your life.\n\nWhat time do you wake up? ⏰\n\n#MorningRoutine #Discipline #SuccessHabits #HighPerformance",
+    "site": "linkedin",
+    "isReply": false,
+    "label": "slop",
+    "note": "4:30 AM routine humblebrag broetry"
+  },
+  {
+    "text": "Great insights, Sarah! This really underscores the importance of continuous learning in today's dynamic landscape. Thanks for sharing! 🙌",
+    "site": "linkedin",
+    "isReply": true,
+    "label": "slop",
+    "note": "generic bot reply with stock phrases"
+  },
+  {
+    "text": "This is so true! 💯 Consistency really is the key to success. 🔥",
+    "site": "x",
+    "isReply": true,
+    "label": "slop",
+    "note": "generic agreement reply"
+  },
+  {
+    "text": "Wow, what an amazing video! Your content is always so informative and valuable. Keep up the great work! 👏👏",
+    "site": "youtube",
+    "isReply": true,
+    "label": "slop",
+    "note": "generic praise reply, no specifics"
+  },
+  {
+    "text": "Sehr spannender Beitrag! Vielen Dank fürs Teilen – das regt definitiv zum Nachdenken an. 👏",
+    "site": "linkedin",
+    "isReply": true,
+    "label": "slop",
+    "note": "German generic bot reply"
+  },
+  {
+    "text": "Love this! 😍 Such a powerful message, it truly resonates with me. ✨",
+    "site": "instagram",
+    "isReply": true,
+    "label": "slop",
+    "note": "generic resonates reply"
+  },
+  {
+    "text": "Absolutely agree! It's not just about the tools, it's about the mindset. Well said! 🚀",
+    "site": "linkedin",
+    "isReply": true,
+    "label": "slop",
+    "note": "generic reply with not-X-it's-Y template"
+  },
+  {
+    "text": "Great question! There are many factors to consider here, and the right choice ultimately depends on your specific needs, goals, and circumstances. It's always a good idea to do thorough research and consult with a professional. Hope this helps!",
+    "site": "reddit",
+    "isReply": true,
+    "label": "slop",
+    "note": "evasive generic AI-style answer with no content"
+  },
+  {
+    "text": "Toller Inhalt, weiter so! Genau das habe ich heute gebraucht. 🙏",
+    "site": "facebook",
+    "isReply": true,
+    "label": "slop",
+    "note": "German generic praise reply"
+  },
+  {
+    "text": "Millennials crying they can't afford a house while buying $8 oat milk lattes every morning. Nobody wants to hear it but maybe stop spending like children and you'd have a down payment. Cope.",
+    "site": "x",
+    "isReply": false,
+    "label": "rage",
+    "note": "generational ragebait"
+  },
+  {
+    "text": "UNFASSBAR!!! 😡😡 Die Stadt verlangt jetzt 8 Euro pro Stunde fürs Parken am Klinikum – während Kranke und Alte da hin MÜSSEN! Wer sich das ausgedacht hat, sollte sich schämen! Aber die da oben kassieren ja lieber ab, als wäre nichts. TEILEN bevor es gelöscht wird!!!",
+    "site": "facebook",
+    "isReply": false,
+    "label": "rage",
+    "note": "German outrage bait with share-before-deleted"
+  },
+  {
+    "text": "If you still tip 20% in 2026 you're literally the reason this economy is broken. Pay your staff properly or close your restaurant. I'm not subsidizing your business model. Fight me.",
+    "site": "threads",
+    "isReply": false,
+    "label": "rage",
+    "note": "tipping provocation"
+  },
+  {
+    "text": "Parents who bring toddlers to restaurants should be banned. Your screaming kid is not my problem and your \"they're just a child\" excuse is pathetic. Stay home. Ratio me, I don't care.",
+    "site": "x",
+    "isReply": false,
+    "label": "rage",
+    "note": "parents/kids provocation with ratio dare"
+  }
+]

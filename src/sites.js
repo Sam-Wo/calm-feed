@@ -1,4 +1,5 @@
 // Per-site adapters: how to find a "post" container, its text, and its author.
+// Optional: ctx(el) -> { site, isReply }, permalink(el) -> absolute URL | null.
 // Social sites change their markup often — if a site stops being filtered,
 // this file is the one to update.
 (function (root) {
@@ -8,6 +9,17 @@
   const q = (el, sel) => el.querySelector(sel);
   const qa = (el, sel) => Array.from(el.querySelectorAll(sel));
   const join = (...parts) => parts.filter(Boolean).join('\n').trim();
+  const abs = (href) => { try { return href ? new URL(href, location.origin).href : null; } catch { return null; } };
+
+  // X: the focal tweet on a /status/ page is the one whose timestamp links to
+  // the URL's status id. Every other article in the thread is a reply.
+  function xStatusId() { const m = location.pathname.match(/\/status\/(\d+)/); return m ? m[1] : null; }
+  function xPermalink(el) {
+    const t = q(el, 'a[href*="/status/"] time');
+    const a = (t && t.closest('a')) || q(el, 'a[href*="/status/"]');
+    return a ? a.getAttribute('href').replace(/\/(?:photo|video|analytics)\/.*$/, '') : null;
+  }
+  const X_REPLYING = /^(?:Replying to|Antwort an|En réponse à|Respondiendo a|In risposta a)\b/;
 
   const SITES = [
     {
@@ -23,7 +35,21 @@
       author: (el) => {
         const a = q(el, '[data-testid="User-Name"] a[href^="/"]');
         return a ? a.getAttribute('href').replace(/^\//, '').split('/')[0] : '';
-      }
+      },
+      ctx: (el) => {
+        const id = xStatusId();
+        let isReply = false;
+        if (id) {
+          const href = xPermalink(el);
+          isReply = href ? !href.endsWith(`/status/${id}`)
+            : document.querySelector('article[data-testid="tweet"]') !== el; // fallback: every article but the first
+        }
+        if (!isReply) {
+          isReply = qa(el, 'div[dir], span').some((n) => n.childElementCount <= 2 && X_REPLYING.test(n.textContent || ''));
+        }
+        return { site: 'x', isReply };
+      },
+      permalink: (el) => abs(xPermalink(el))
     },
     {
       id: 'instagram',
@@ -62,7 +88,11 @@
         return join(txt(q(el, 'a.title, [slot="title"], h3')), txt(q(el, '.usertext-body, [slot="text-body"]')));
       },
       author: (el) => el.getAttribute('author') || el.getAttribute('data-author') ||
-        el.getAttribute('subreddit-prefixed-name') || txt(q(el, 'a.author'))
+        el.getAttribute('subreddit-prefixed-name') || txt(q(el, 'a.author')),
+      permalink: (el) => {
+        const p = q(el, 'shreddit-post[permalink]');
+        return abs(el.getAttribute('permalink') || el.getAttribute('data-permalink') || (p && p.getAttribute('permalink')));
+      }
     },
     {
       id: 'youtube',
@@ -72,7 +102,11 @@
         txt(q(el, '#video-title, h3, .yt-lockup-metadata-view-model-wiz__title, [id="video-title-link"]')),
         txt(q(el, '#description-text, .metadata-snippet-text'))
       ),
-      author: (el) => txt(q(el, 'ytd-channel-name a, #channel-name a, .yt-content-metadata-view-model-wiz__metadata-text')).trim()
+      author: (el) => txt(q(el, 'ytd-channel-name a, #channel-name a, .yt-content-metadata-view-model-wiz__metadata-text')).trim(),
+      permalink: (el) => {
+        const a = q(el, 'a[href*="/watch?v="], a[href^="/shorts/"]');
+        return a ? abs(a.getAttribute('href').replace(/&.*$/, '')) : null;
+      }
     },
     {
       id: 'threads',
@@ -96,7 +130,12 @@
       hosts: ['www.linkedin.com'],
       post: 'div.feed-shared-update-v2, div[data-urn^="urn:li:activity"]',
       text: (el) => txt(q(el, '.update-components-text, .feed-shared-inline-show-more-text')),
-      author: (el) => txt(q(el, '.update-components-actor__title span[aria-hidden="true"], .update-components-actor__name')).trim()
+      author: (el) => txt(q(el, '.update-components-actor__title span[aria-hidden="true"], .update-components-actor__name')).trim(),
+      permalink: (el) => {
+        const holder = el.matches('[data-urn]') ? el : (q(el, '[data-urn^="urn:li:activity"]') || el.closest('[data-urn]'));
+        const urn = holder && holder.getAttribute('data-urn');
+        return urn && /^urn:li:/.test(urn) ? `https://www.linkedin.com/feed/update/${urn}/` : null;
+      }
     }
   ];
 

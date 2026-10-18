@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Calm Feed — Ragebait Filter",
-  "version": "0.1.0",
-  "description": "Hides ragebait and outrage-farming posts on X, Instagram, Facebook, Reddit, YouTube, Threads, Bluesky and LinkedIn before you see them.",
+  "name": "Calm Feed — Ragebait & Slop Filter",
+  "version": "0.2.0",
+  "description": "Hides ragebait and formulaic slop on X, Instagram, Facebook, Reddit, YouTube, Threads, Bluesky and LinkedIn before you see them.",
   "permissions": ["storage", "activeTab"],
   "host_permissions": ["https://api.anthropic.com/*"],
   "background": {
     "service_worker": "src/background.js",
-    "scripts": ["src/common.js", "src/background.js"]
+    "scripts": ["src/common.js", "src/db.js", "src/background.js"]
   },
   "content_scripts": [
     {
@@ -27,7 +27,7 @@
         "https://bsky.app/*",
         "https://www.linkedin.com/*"
       ],
-      "js": ["src/common.js", "src/sites.js", "src/heuristics.js", "src/content.js"],
+      "js": ["src/common.js", "src/sites.js", "src/heuristics.js", "src/slop.js", "src/content.js"],
       "css": ["src/content.css"],
       "run_at": "document_start",
       "all_frames": false

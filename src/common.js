@@ -19,7 +19,18 @@
     sites: {
       x: true, instagram: true, facebook: true, reddit: true,
       youtube: true, threads: true, bluesky: true, linkedin: true
-    }
+    },
+    // Slop filter (v0.2): generic, formulaic, low-effort text.
+    slopEnabled: true,
+    slopThreshold: 0.65,
+    slopSites: {
+      x: true, instagram: true, facebook: true, reddit: true,
+      youtube: true, threads: true, bluesky: true, linkedin: true
+    },
+    // Analytics event log (v0.2)
+    logRetentionDays: 30,    // 7 / 30 / 90 / 0 = forever
+    logText: true,           // store post text in the log
+    syncUrl: ''              // reserved for optional self-hosted sync (not used yet)
   };
 
   function merge(base, over) {
@@ -59,10 +70,38 @@
     return (h >>> 0).toString(16).padStart(8, '0') + s.length.toString(36);
   }
 
-  function today() {
-    const d = new Date();
+  function dayKey(t) {
+    const d = t === undefined ? new Date() : new Date(t);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
+  function today() { return dayKey(); }
 
-  root.RBF = { DEFAULTS, merge, getSettings, saveSettings, norm, hash, today };
+  // Which filter fired. 'keyword' | 'author' | 'manual' are grouped as "lists".
+  const FILTERS = ['ragebait', 'slop', 'keyword', 'author', 'manual'];
+  const FILTER_LABEL = { ragebait: 'Ragebait', slop: 'Slop', keyword: 'Keyword', author: 'Muted author', manual: 'You' };
+
+  // Feedback examples: v0.1 stored { pos, neg } for ragebait only.
+  function migrateExamples(ex) {
+    if (!ex) return { rage: { pos: [], neg: [] }, slop: { pos: [], neg: [] } };
+    if (Array.isArray(ex.pos) || Array.isArray(ex.neg)) {
+      return { rage: { pos: ex.pos || [], neg: ex.neg || [] }, slop: { pos: [], neg: [] } };
+    }
+    return {
+      rage: { pos: (ex.rage && ex.rage.pos) || [], neg: (ex.rage && ex.rage.neg) || [] },
+      slop: { pos: (ex.slop && ex.slop.pos) || [], neg: (ex.slop && ex.slop.neg) || [] }
+    };
+  }
+
+  // Cache entries: v0.1 stored { p, why, t }; v0.2 stores { r, s, why, t }.
+  // s === null means "slop never asked" -> re-ask only if slop is enabled.
+  function migrateVerdict(v) {
+    if (!v) return v;
+    if ('r' in v) return v;
+    return { r: v.p, s: null, why: v.why, t: v.t };
+  }
+
+  root.RBF = {
+    DEFAULTS, merge, getSettings, saveSettings, norm, hash, today, dayKey,
+    FILTERS, FILTER_LABEL, migrateExamples, migrateVerdict
+  };
 })(globalThis);

@@ -50,3 +50,24 @@ textarea { min-height: 84px; resize: vertical; }
 .sites label { display: flex; gap: 6px; align-items: center; }
 .saved { color: var(--accent); font-size: 12px; opacity: 0; transition: opacity .3s; }
 .saved.show { opacity: 1; }
+
+/* v0.2: chart series tokens (validated: 3 slots, all-pairs CVD ΔE ≥ 9 in both modes) */
+:root { --s-rage: #eb6834; --s-slop: #2a78d6; --s-lists: #1baf7a; --grid: #e7e5e4; --axis: #d6d3d1; }
+@media (prefers-color-scheme: dark) {
+  :root { --s-rage: #d95926; --s-slop: #3987e5; --s-lists: #199e70; --grid: #3a3532; --axis: #57534e; }
+}
+
+/* popup */
+.split { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 4px; }
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--fg); }
+.chip::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--muted); }
+.chip-ragebait::before { background: var(--s-rage); }
+.chip-slop::before { background: var(--s-slop); }
+.chip-lists::before { background: var(--s-lists); }
+.spark-wrap { margin: 10px 0 2px; }
+.spark { display: block; width: 100%; height: 36px; overflow: visible; }
+.spark-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.spark-area { fill: var(--accent); opacity: .12; }
+.spark-dot { fill: var(--accent); stroke: var(--bg); stroke-width: 2; }
+.btn:disabled, input:disabled { opacity: .5; cursor: default; }
+a { color: var(--accent); }

@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calm Feed — Dashboard</title>
+<link rel="stylesheet" href="ui.css">
+<link rel="stylesheet" href="analytics.css">
+</head>
+<body>
+<main class="dash">
+  <header class="dash-head">
+    <div>
+      <h1>Calm Feed</h1>
+      <div class="muted tiny" id="status">Everything here is stored on this device only.</div>
+    </div>
+    <div class="row">
+      <div class="seg" role="radiogroup" aria-label="Time range">
+        <button type="button" data-range="today" role="radio">Today</button>
+        <button type="button" data-range="7" role="radio">7 days</button>
+        <button type="button" data-range="30" role="radio">30 days</button>
+      </div>
+      <a class="btn ghost" href="options.html">Settings</a>
+    </div>
+  </header>
+
+  <section class="tiles" aria-label="Summary">
+    <div class="tile"><div class="tile-k">Posts scanned</div><div class="tile-v" id="t-scanned">–</div><div class="tile-s" id="t-scanned-s"></div></div>
+    <div class="tile"><div class="tile-k">Hidden</div><div class="tile-v" id="t-hidden">–</div><div class="tile-s" id="t-hidden-s"></div></div>
+    <div class="tile"><div class="tile-k">Hidden share</div><div class="tile-v" id="t-pct">–</div><div class="tile-s" id="t-pct-s"></div></div>
+    <div class="tile tile-split"><div class="tile-k">Split</div>
+      <div class="splitbar" id="t-splitbar" aria-hidden="true"></div>
+      <div class="split" id="t-split"></div>
+    </div>
+    <div class="tile"><div class="tile-k">Time saved <span class="est">estimate</span></div><div class="tile-v" id="t-time">–</div><div class="tile-s">at ~6 s per hidden post</div></div>
+  </section>
+
+  <section class="grid2">
+    <div class="card chart-card">
+      <div class="card-head">
+        <h2 id="c1-title">Hidden posts</h2>
+        <div class="legend" id="c1-legend"></div>
+      </div>
+      <div class="chart" id="c1"></div>
+      <details class="tableview"><summary>Show as table</summary><div id="c1-table"></div></details>
+    </div>
+    <div class="card chart-card">
+      <div class="card-head"><h2>Hidden share per site</h2></div>
+      <div class="chart" id="c2"></div>
+      <details class="tableview"><summary>Show as table</summary><div id="c2-table"></div></details>
+    </div>
+  </section>
+
+  <section class="grid3">
+    <div class="card"><div class="card-head"><h2>Top filtered authors</h2></div><ol class="toplist" id="top-authors"></ol></div>
+    <div class="card"><div class="card-head"><h2>Top reasons</h2></div><ol class="toplist" id="top-reasons"></ol></div>
+    <div class="card"><div class="card-head"><h2>Most re-seen posts</h2></div><ol class="toplist" id="top-seen"></ol></div>
+  </section>
+
+  <section class="card log">
+    <div class="card-head">
+      <h2>Query log</h2>
+      <div class="row">
+        <label class="check"><input type="checkbox" id="f-near"> Near threshold (±0.1)</label>
+        <button class="btn ghost" type="button" id="exp-csv">Export CSV</button>
+        <button class="btn ghost" type="button" id="exp-json">Export JSON</button>
+      </div>
+    </div>
+    <div class="filters">
+      <input type="search" id="f-q" placeholder="Search text, author, reasons…" aria-label="Search">
+      <select id="f-site" aria-label="Site"><option value="">All sites</option></select>
+      <select id="f-filter" aria-label="Filter">
+        <option value="">All filters</option>
+        <option value="ragebait">Ragebait</option><option value="slop">Slop</option>
+        <option value="keyword">Keyword</option><option value="author">Muted author</option><option value="manual">You</option>
+      </select>
+      <select id="f-source" aria-label="Source">
+        <option value="">All sources</option><option value="heuristic">Local scorer</option><option value="llm">Claude</option><option value="user">You</option>
+      </select>
+      <label class="inline">From <input type="date" id="f-from"></label>
+      <label class="inline">To <input type="date" id="f-to"></label>
+      <label class="inline">Score <input type="number" id="f-smin" min="0" max="1" step="0.05" placeholder="0"> – <input type="number" id="f-smax" min="0" max="1" step="0.05" placeholder="1"></label>
+      <label class="check"><input type="checkbox" id="f-restored"> Restored only</label>
+    </div>
+    <div class="tablewrap">
+      <table class="logtable">
+        <thead><tr><th>Time</th><th>Site</th><th>Filter</th><th class="num">Score</th><th>Author</th><th>Text</th><th aria-label="Open"></th></tr></thead>
+        <tbody id="log-body"></tbody>
+      </table>
+    </div>
+    <div class="pager">
+      <span class="muted tiny" id="log-count"></span>
+      <div class="row">
+        <button class="btn ghost" type="button" id="pg-prev">← Newer</button>
+        <span class="tiny muted" id="pg-info"></span>
+        <button class="btn ghost" type="button" id="pg-next">Older →</button>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="tip" id="tip" role="status" hidden></div>
+<script src="src/common.js"></script>
+<script src="src/db.js"></script>
+<script src="analytics.js"></script>
+</body>
+</html>

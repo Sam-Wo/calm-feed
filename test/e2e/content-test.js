@@ -48,7 +48,7 @@ if (!fs.existsSync(CERT)) {
 const server = https.createServer({ key: fs.readFileSync(KEY), cert: fs.readFileSync(CERT) }, (req, res) => {
   res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
   res.end(req.url.includes('/status/') ? page(REPLIES) : page(POSTS));
-}).listen(PORT);
+}).listen(PORT, '127.0.0.1');   // loopback only: no firewall prompt, nothing reachable from the network
 
 (async () => {
   const { proc, port } = await launch({

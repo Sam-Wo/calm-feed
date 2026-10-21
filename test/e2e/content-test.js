@@ -1,4 +1,4 @@
-// End-to-end: real content script on a fake x.com timeline (served locally over HTTPS).
+// End-to-end: real content script on fake X and LinkedIn feeds (served locally over HTTPS).
 'use strict';
 const https = require('https');
 const fs = require('fs');
@@ -25,6 +25,36 @@ const REPLIES = [
   { id: 'real1', expect: 'shown', author: 'friend', status: '1002', text: 'Same here, the 2.3 release broke my build too' }
 ];
 
+// LinkedIn: the 2026 server-driven markup, as seen on a real feed (structure only).
+const FIX = require('../fixtures.json');
+const fx = (start) => (Array.isArray(FIX) ? FIX : FIX.samples).find((f) => f.site === 'linkedin' && f.text.startsWith(start)).text;
+const LI_POSTS = [
+  { id: 'li_slop', expect: 'slop', author: 'coach-max', text: fx('7 lessons nobody') },
+  { id: 'li_human', expect: 'shown', author: 'anna-meier', text: fx('After six years'), comment: fx('Yesterday I fired') },
+  { id: 'li_late', expect: 'slop', author: 'mindset-de', text: fx('Ich wurde 3 Mal'), late: true },
+  { id: 'li_rel', expect: 'shown', author: 'acme-corp', company: true, text: fx('Release 3.4') }
+];
+const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const liBody = (t) => `<div componentkey="translatable-commentary-FeTranslationUrn(x)"><p componentkey="uuid"><span data-testid="expandable-text-box">${esc(t).replace(/\n/g, '<br>')}<button data-testid="expandable-text-button">… mehr</button></span></p></div>`;
+const liPost = (p) => `<div data-lazy-mount-id="${p.id}"><div data-display-contents="true"><div><div componentkey="expanded${p.id}FeedType_MAIN_FEED_RELEVANCE">
+  <div role="listitem" componentkey="update-card-focus${p.id}FeedType_MAIN_FEED_RELEVANCE" id="${p.id}"><div data-display-contents="true"><div componentkey="${p.id}">
+    <a href="https://www.linkedin.com/${p.company ? 'company' : 'in'}/${p.author}/">${p.author}</a>
+    ${p.late ? '' : liBody(p.text)}
+    ${p.comment ? `<div data-testid="Cgs${p.id}-commentList">${liBody(p.comment)}</div>` : ''}
+    <a href="/feed/update/urn:li:activity:7${p.id.length}00000000000000000/">1 Std.</a>
+  </div></div></div></div></div></div>`;
+const liPage = () => `<!doctype html><html><head><meta charset="utf-8"><title>fake linkedin</title></head><body>
+<div role="list" data-testid="mainFeed" componentkey="container-update-list_mainFeed-lazy-container"></div>
+<script>
+  const posts = ${JSON.stringify(LI_POSTS.map((p) => ({ id: p.id, html: liPost(p), late: p.late ? liBody(p.text) : null })))};
+  const feed = document.querySelector('[data-testid="mainFeed"]');
+  // Cards arrive one by one; the late card's text is rendered 400 ms after the card itself.
+  let i = 0; const tick = () => { if (i < posts.length) { const p = posts[i++]; feed.insertAdjacentHTML('beforeend', p.html);
+    if (p.late) setTimeout(() => document.querySelector('[componentkey="' + p.id + '"]').insertAdjacentHTML('afterbegin', p.late), 400);
+    setTimeout(tick, 120); } };
+  setTimeout(tick, 300);
+</script></body></html>`;
+
 const tweet = (p) => `<div data-testid="cellInnerDiv"><article data-testid="tweet" id="${p.id}">
   <div data-testid="User-Name"><a href="/${p.author}">${p.author}</a></div>
   <div data-testid="tweetText">${p.text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>
@@ -47,13 +77,14 @@ if (!fs.existsSync(CERT)) {
 }
 const server = https.createServer({ key: fs.readFileSync(KEY), cert: fs.readFileSync(CERT) }, (req, res) => {
   res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+  if (/linkedin/.test(req.headers.host || '')) return res.end(liPage());
   res.end(req.url.includes('/status/') ? page(REPLIES) : page(POSTS));
 }).listen(PORT, '127.0.0.1');   // loopback only: no firewall prompt, nothing reachable from the network
 
 (async () => {
   const { proc, port } = await launch({
     exe: EXE, ext: EXT, profile: path.join(OUTDIR, 'profile-content'),
-    extraArgs: ['--host-resolver-rules=MAP x.com 127.0.0.1', '--ignore-certificate-errors']
+    extraArgs: ['--host-resolver-rules=MAP x.com 127.0.0.1, MAP www.linkedin.com 127.0.0.1', '--ignore-certificate-errors']
   });
   const results = [];
   const check = (name, ok, detail) => results.push([ok ? 'PASS' : 'FAIL', name, detail]);
@@ -107,6 +138,20 @@ const server = https.createServer({ key: fs.readFileSync(KEY), cert: fs.readFile
     await th.evaluate(`document.querySelector('.rbf-menu button[data-a="slop"]').click()`);
     await sleep(2500);
 
+    // LinkedIn (2026 markup): cards found, comments ignored, late text re-judged
+    const li = await open(port, `https://www.linkedin.com:${PORT}/feed/`);
+    await sleep(3000);
+    const lstate = await li.evaluate(`(${() => [...document.querySelectorAll('[role="listitem"][componentkey^="update-card-focus"]')].map((a) => ({
+      id: a.id, rbf: a.getAttribute('data-rbf'), hidden: a.hasAttribute('data-rbf-hidden'),
+      stub: a.previousElementSibling && a.previousElementSibling.className === 'rbf-stub' ? a.previousElementSibling.innerText.replace(/\s+/g, ' ') : null
+    }))})()`);
+    for (const p of LI_POSTS) {
+      const s = lstate.find((x) => x.id === p.id) || {};
+      const ok = p.expect === 'shown' ? s.rbf === 'ok' && !s.hidden : s.hidden && /Slop/.test(s.stub || '');
+      check(`linkedin: ${p.id} → ${p.expect}`, ok, JSON.stringify(s));
+    }
+    await sleep(1500);   // tallies: 2 s batch in the page + 1 s in the worker
+
     // Event log + tallies
     const log = await ext.evaluate(`Promise.all([RBF_DB.range(0, Infinity), chrome.storage.local.get('rbf_daily')]).then(([evs, d]) => ({
       events: evs.map((e) => [e.site, e.filter, e.source, e.author, e.url, e.restored]),
@@ -117,9 +162,15 @@ const server = https.createServer({ key: fs.readFileSync(KEY), cert: fs.readFile
     check('log: bot reply restored after "Not slop"', byAuthor.replybot && byAuthor.replybot[5] === true, JSON.stringify(byAuthor.replybot));
     check('log: manual "Hide as slop"', byAuthor.friend && byAuthor.friend[1] === 'manual' && byAuthor.friend[2] === 'user', JSON.stringify(byAuthor.friend));
     check('log: human posts not logged', !byAuthor.pgdev && !byAuthor.oma, Object.keys(byAuthor).join(','));
+    const coach = byAuthor['coach-max'];
+    check('log: linkedin author from /in/ link + activity permalink', coach && coach[0] === 'linkedin'
+      && /\/feed\/update\/urn:li:activity:\d+\/$/.test(coach[4]) && !!byAuthor['mindset-de'], JSON.stringify([coach, byAuthor['mindset-de']]));
+    const lt = log.daily && log.daily.linkedin;
+    check('linkedin tally: scanned + slop', lt && lt.scanned >= 4 && lt.slop >= 2, JSON.stringify(lt));
     const x = log.daily && log.daily.x;
     check('daily tally: scanned + per-filter + byHour', x && x.scanned >= 8 && x.slop >= 1 && x.ragebait >= 1 && x.keyword >= 1 && x.byHour, JSON.stringify(x));
     await tl.shot(path.join(OUTDIR, 'x-stub.png'), false);
+    await li.shot(path.join(OUTDIR, 'linkedin-stub.png'), false);
   } catch (e) {
     check('test run', false, e.stack);
   } finally {

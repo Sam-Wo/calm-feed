@@ -78,7 +78,7 @@ Logging never sits on the hide path. A post is hidden first and logged afterward
 node test/run.js                     # tuning fixtures: confusion table + acceptance checks
 node test/run.js test/holdout2.json  # blind set: never tune the scorer against it
 node test/e2e/dashboard-test.js      # headless Edge/Chromium: event log, restore, prune, 20k-event load, CSV
-node test/e2e/content-test.js        # real content script on a fake x.com timeline
+node test/e2e/content-test.js        # real content script on fake X and LinkedIn feeds
 ```
 The e2e tests drive a headless Chromium browser over the DevTools protocol and have no dependencies. They default to Edge on Windows; set `CHROMIUM=/path/to/browser` to use another. Branded Chrome 137+ ignores `--load-extension`, so use Edge or Chromium. `content-test.js` needs `openssl` on PATH (Git for Windows ships it).
 

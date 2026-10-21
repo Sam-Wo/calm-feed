@@ -126,12 +126,34 @@
       author: (el) => (el.getAttribute('data-testid') || '').replace(/^(feedItem|postThreadItem)-by-/, '')
     },
     {
+      // Two markups: the server-driven UI rolled out in 2026 (random class
+      // names, `componentkey` attributes, one role="listitem" card per post
+      // inside [data-testid="mainFeed"]) and the classic feed-shared-update-v2.
       id: 'linkedin',
       hosts: ['www.linkedin.com'],
-      post: 'div.feed-shared-update-v2, div[data-urn^="urn:li:activity"]',
-      text: (el) => txt(q(el, '.update-components-text, .feed-shared-inline-show-more-text')),
-      author: (el) => txt(q(el, '.update-components-actor__title span[aria-hidden="true"], .update-components-actor__name')).trim(),
+      post: 'div[role="listitem"][componentkey^="update-card-focus"], div.feed-shared-update-v2, div[data-urn^="urn:li:activity"]',
+      text: (el) => {
+        // Post body (and a reshared post's body), never the comments under it.
+        const boxes = qa(el, '[data-testid="expandable-text-box"]')
+          .filter((b) => !b.closest('[data-testid*="commentList"]'));
+        if (boxes.length) {
+          return boxes.map((b) => {
+            const more = q(b, '[data-testid="expandable-text-button"]');
+            const t = txt(b);
+            return more ? t.replace(txt(more), '') : t;
+          }).join('\n').trim();
+        }
+        return txt(q(el, '[componentkey^="translatable-commentary"], .update-components-text, .feed-shared-inline-show-more-text'));
+      },
+      author: (el) => {
+        const a = q(el, 'a[href*="/in/"], a[href*="/company/"]');
+        const m = a && a.getAttribute('href').match(/\/(?:in|company)\/([^/?#]+)/);
+        if (m) { try { return decodeURIComponent(m[1]); } catch { return m[1]; } }
+        return txt(q(el, '.update-components-actor__title span[aria-hidden="true"], .update-components-actor__name')).trim();
+      },
       permalink: (el) => {
+        const a = q(el, 'a[href*="/feed/update/urn:li:"]');
+        if (a) return abs(a.getAttribute('href').replace(/[?#].*$/, ''));
         const holder = el.matches('[data-urn]') ? el : (q(el, '[data-urn^="urn:li:activity"]') || el.closest('[data-urn]'));
         const urn = holder && holder.getAttribute('data-urn');
         return urn && /^urn:li:/.test(urn) ? `https://www.linkedin.com/feed/update/${urn}/` : null;
